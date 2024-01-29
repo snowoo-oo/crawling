@@ -1,5 +1,5 @@
-# npm install
-# npm start
+npm install
+npm start
 
 await driver.get([url 입력 + page 변수화])
 Sheet1 이름설정
