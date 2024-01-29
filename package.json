@@ -1,0 +1,17 @@
+{
+  "name": "crawling2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-json-xlsx": "^0.2.2",
+    "selenium-webdriver": "^4.17.0",
+    "xlsx": "^0.18.5"
+  }
+}
