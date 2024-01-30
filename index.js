@@ -2,7 +2,7 @@ const { Builder, By, Key, until, Capabilities } = require("selenium-webdriver")
 const chrome = require("selenium-webdriver/chrome")
 const XLSX = require("xlsx")
 const fs = require("fs")
-const capabilities = Capabilities.chrome()
+const capabilities = Capabilities.chrome().setAcceptInsecureCerts(true)
 let array = []
 const run = async () => {
   let driver = await new Builder()
@@ -10,6 +10,9 @@ const run = async () => {
     .withCapabilities(capabilities)
     .setChromeOptions(
       new chrome.Options().addArguments(
+        // "--headless",
+        "--ignore-certificate-error",
+        "--ignore-ssl-errors",
         "--disable-gpu",
         "window-size=1920x1080",
         "lang=ko_KR"
@@ -20,29 +23,41 @@ const run = async () => {
   try {
     let nowPage = 1
     let totalCount = 0
+
     while (true) {
+      //test
+      // if (totalCount >= 10) break
       await driver.get(
-        `https://www.karhanbang.com/office/office_list.asp?topM=09&flag=G&page=${nowPage++}&search=&sel_sido=10&sel_gugun=67&sel_dong=`
+        `https://www.karhanbang.com/office/office_list.asp?topM=09&flag=G&page=${nowPage++}&search=&sel_sido=1&sel_gugun=155&sel_dong=`
       )
+
       await driver.executeScript("window.scroll(0," + 500 + ");")
       // let pageSize = //*[@id="contents"]/div[1]/div[3]/div/div/a[1] //*[@id="contents"]/div[1]/div[3]/div/div/a[2] //*[@id="contents"]/div[1]/div[3]/div/div/a[3]
+
       let rowCount = (
         await driver.findElements(
           By.xpath('//*[@id="contents"]/div[1]/div[3]/div/table/tbody/tr')
         )
       ).length
+      console.log("page: ", nowPage - 1)
+      console.log("row count: ", rowCount)
+
       if (rowCount == 0) break
       for (let i = 1; i <= rowCount; i++) {
         await driver
           .wait(
             until.elementLocated(
               By.xpath(
-                `//*[@id="contents"]/div[1]/div[3]/div/table/tbody/tr[${i}]/td[2]`
+                `//*[@id="contents"]/div[1]/div[3]/div/table/tbody/tr[${i}]/td[2]/p/a`
               )
             )
           )
           .click()
-
+        let company1 = await driver.wait(
+          until.elementLocated(
+            By.xpath('//*[@id="realtorsDetail"]/div[1]/div[3]/dl/dt')
+          )
+        )
         let name1 = await driver.wait(
           until.elementLocated(
             By.xpath(
@@ -71,17 +86,25 @@ const run = async () => {
             )
           )
         )
-
+        const company = (await company1.getText()).split("\n")[0]
         const name = await name1.getText()
         const address = await address1.getText()
         const tel = await tel1.getText()
         const phone = await phone1.getText()
+        //console.log("상호: ", company)
         // console.log("name: ", name);
         // console.log("address: ", address);
         // console.log("전화번호: ", tel);
         // console.log("휴대폰번호: ", phone);
         totalCount++
-        array.push({ name, address, tel, phone })
+        console.log("totalCount: ", totalCount)
+        array.push({
+          상호: company,
+          이름: name,
+          주소: address,
+          전화번호: tel,
+          핸드폰번호: phone,
+        })
         await driver.navigate().back()
       }
     }
@@ -91,9 +114,9 @@ const run = async () => {
     const ws = XLSX.utils.json_to_sheet(array)
 
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "Sheet1")
+    XLSX.utils.book_append_sheet(wb, ws, "마포구")
 
-    const excelFileName = "data.xlsx"
+    const excelFileName = "마포구.xlsx"
     XLSX.writeFile(wb, excelFileName)
   } catch (e) {
     console.error(e)
