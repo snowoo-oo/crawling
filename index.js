@@ -1,3 +1,9 @@
+/**
+ * [실행 명령어] node --max-old-space-size=4096 index.js
+ * [url수정, 파일이름수정, sheet 이름 수정]
+ * [issue] 'out of memory' 문제로 약 450 count 마다 새로고침해줘야 하는 문제가 있음.
+ * https://www.tutorialspoint.com/how-to-solve-process-out-of-memory-exception-in-node-js
+ */
 const { Builder, By, Key, until, Capabilities } = require("selenium-webdriver")
 const chrome = require("selenium-webdriver/chrome")
 const XLSX = require("xlsx")
@@ -10,7 +16,7 @@ const run = async () => {
     .withCapabilities(capabilities)
     .setChromeOptions(
       new chrome.Options().addArguments(
-        // "--headless",
+        "--headless",
         "--ignore-certificate-error",
         "--ignore-ssl-errors",
         "--disable-gpu",
@@ -28,7 +34,7 @@ const run = async () => {
       //test
       // if (totalCount >= 10) break
       await driver.get(
-        `https://www.karhanbang.com/office/office_list.asp?topM=09&flag=G&page=${nowPage++}&search=&sel_sido=1&sel_gugun=155&sel_dong=`
+        `https://www.karhanbang.com/office/office_list.asp?topM=09&flag=G&page=${nowPage++}&search=&sel_sido=2&sel_gugun=28&sel_dong=`
       )
 
       await driver.executeScript("window.scroll(0," + 500 + ");")
@@ -44,6 +50,15 @@ const run = async () => {
 
       if (rowCount == 0) break
       for (let i = 1; i <= rowCount; i++) {
+        let region1 = await driver.wait(
+          until.elementLocated(
+            By.xpath(
+              `//*[@id="contents"]/div[1]/div[3]/div/table/tbody/tr[${i}]/td[1]`
+            )
+          )
+        )
+        const region = (await region1.getText()).split(" ")[0]
+
         await driver
           .wait(
             until.elementLocated(
@@ -53,11 +68,14 @@ const run = async () => {
             )
           )
           .click()
+
         let company1 = await driver.wait(
           until.elementLocated(
             By.xpath('//*[@id="realtorsDetail"]/div[1]/div[3]/dl/dt')
           )
         )
+        const company = (await company1.getText()).split("\n")[0]
+
         let name1 = await driver.wait(
           until.elementLocated(
             By.xpath(
@@ -65,6 +83,8 @@ const run = async () => {
             )
           )
         )
+        const name = await name1.getText()
+
         let address1 = await driver.wait(
           until.elementLocated(
             By.xpath(
@@ -72,6 +92,8 @@ const run = async () => {
             )
           )
         )
+        const address = await address1.getText()
+
         let tel1 = await driver.wait(
           until.elementLocated(
             By.xpath(
@@ -79,6 +101,8 @@ const run = async () => {
             )
           )
         )
+        const tel = await tel1.getText()
+
         let phone1 = await driver.wait(
           until.elementLocated(
             By.xpath(
@@ -86,11 +110,8 @@ const run = async () => {
             )
           )
         )
-        const company = (await company1.getText()).split("\n")[0]
-        const name = await name1.getText()
-        const address = await address1.getText()
-        const tel = await tel1.getText()
         const phone = await phone1.getText()
+
         //console.log("상호: ", company)
         // console.log("name: ", name);
         // console.log("address: ", address);
@@ -99,6 +120,7 @@ const run = async () => {
         totalCount++
         console.log("totalCount: ", totalCount)
         array.push({
+          지역: region,
           상호: company,
           이름: name,
           주소: address,
@@ -114,9 +136,9 @@ const run = async () => {
     const ws = XLSX.utils.json_to_sheet(array)
 
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, "마포구")
+    XLSX.utils.book_append_sheet(wb, ws, "김포시")
 
-    const excelFileName = "마포구.xlsx"
+    const excelFileName = "김포시.xlsx"
     XLSX.writeFile(wb, excelFileName)
   } catch (e) {
     console.error(e)
